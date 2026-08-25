@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+/**
+ * 汉化覆盖率自检脚本
+ * 用法: node scripts/audit.js
+ */
+const fs = require('fs');
+const path = require('path');
+const { detectCursorPath } = require('../src/platform');
+const { translateContent } = require('../src/translate');
+
+const PRIORITY_STRINGS = [
+  // Settings 侧栏
+  ['general:"General"', 'Settings → General'],
+  ['chat:"Agents"', 'Settings → Agents'],
+  ['tab:"Tab"', 'Settings → Tab'],
+  ['models:"Models"', 'Settings → Models'],
+  ['mcp:"Tools & MCPs"', 'Settings → Tools & MCPs'],
+  ['hooks:"Hooks"', 'Settings → Hooks'],
+  ['network:"Network"', 'Settings → Network'],
+  ['beta:"Beta"', 'Settings → Beta'],
+  // Settings 描述
+  ['Show warning-level in-app toasts', '警告通知描述'],
+  ['Show Cursor in menu bar', '菜单栏描述'],
+  ['Open pull request links inside Cursor', 'PR 链接描述'],
+  // Glass 主页
+  ['"New Agent"', 'Glass → New Agent'],
+  ['"Automations"', 'Glass → Automations'],
+  ['"Plan New Idea"', 'Glass → Plan New Idea'],
+  // Agent 常用
+  ['"Learn More"', 'Learn More 按钮'],
+  ['"Open Settings"', 'Open Settings 按钮'],
+  ['"Start New Chat"', 'Start New Chat'],
+  // Automations 页
+  ['"Total Automations"', 'Automations → 总数'],
+  ['"New Automation"', 'Automations → 新建'],
+  ['"Run History"', 'Automations → 运行历史'],
+  ['"Find critical bugs"', 'Automations → 模板'],
+  ['Automate repetitive tasks', 'Automations → 副标题'],
+  // Appearance 页
+  ['Tool Call Density', 'Appearance → 工具调用密度'],
+  ['UI Font Size', 'Appearance → 界面字体大小'],
+  ['Reduce Transparency', 'Appearance → 降低透明度'],
+  ['Choose between light, dark', 'Appearance → 主题描述'],
+  // ① 账号 Profile
+  ['Create your public profile', 'Profile → 创建公开资料'],
+  ['Claim handle', 'Profile → 认领用户名'],
+  // ② 外观补全
+  ['Reduce Motion', 'Appearance → 减少动效'],
+  ['Hide Email Address', 'Appearance → 隐藏邮箱'],
+  // ③ 套餐与用量
+  ['Current Plan</div>', 'Plan → 当前套餐'],
+  ['Upgrade Available</div>', 'Plan → 可升级'],
+  ['Included in Pro+', 'Plan → Pro+ 包含'],
+  ['On-Demand Usage', 'Plan → 按需用量'],
+  ['Auto + Composer', 'Plan → Auto+Composer'],
+  // ④ 智能体补全
+  ['Code Block Word Wrap', 'Agents → 代码块换行'],
+  ['Remote Control', 'Agents → 远程控制'],
+  ['Run Mode', 'Agents → 运行模式'],
+  // ⑤ 工作树
+  ['Max worktrees', 'Worktree → 最大工作树数'],
+  ['No Cursor-managed worktrees on this machine.', 'Worktree → 空状态'],
+  // ⑥ 工具与 MCP
+  ['Wait for MCP Authentication', 'MCP → 等待认证'],
+  ['Browser Automation', 'MCP → 浏览器自动化'],
+  ['Team MCP Servers', 'MCP → 团队服务器'],
+  // ⑦ 钩子
+  ['Configured Hooks', 'Hooks → 已配置钩子'],
+  ['Open user config', 'Hooks → 打开用户配置'],
+  [' are moving to Customize', 'Hooks/MCP → Customize 迁移'],
+  // v1.2.0 截图补全
+  ['browser:"Browser & Network"', 'Settings → Browser & Network'],
+  ['"git-prs":"Git & PRs"', 'Settings → Git & PRs'],
+  ['Adjust Plan', 'Plan → 调整套餐'],
+  ['Allowlist Options', 'Agents → 白名单选项'],
+  ['Enable LSPs', 'Agents → 启用 LSP'],
+  ['Terminal and Editing', 'Agents → 终端与编辑'],
+  ['Max Worktrees', 'Worktree → Max Worktrees'],
+  ['Cursor-Managed Worktrees', 'Worktree → Managed'],
+  ['Explore Subagent Model', 'Models → Explore Subagent'],
+  ['Task Models', 'Models → Task Models'],
+  ['Branch Prefix', 'Git → 分支前缀'],
+  ['Ignore Files', 'Indexing → 忽略文件'],
+  ['Include Third-Party Plugins, Skills, and Other Configs', 'Rules → 第三方配置'],
+  ['Usage limits reset on <!> (<!>)', 'Plan → 用量重置模板'],
+];
+
+function auditFile(label, filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.log(`\n⚠️  ${label}: 文件不存在`);
+    return { missing: PRIORITY_STRINGS.length, total: PRIORITY_STRINGS.length };
+  }
+
+  const current = fs.readFileSync(filePath, 'utf8');
+  const simulated = translateContent(current);
+
+  console.log(`\n=== ${label} ===`);
+  let missing = 0;
+  for (const [needle, desc] of PRIORITY_STRINGS) {
+    const stillInSim = simulated.includes(needle);
+    const inCurrent = current.includes(needle);
+    if (stillInSim) {
+      console.log(`  ❌ ${desc}`);
+      missing++;
+    } else if (inCurrent) {
+      console.log(`  ✅ ${desc} (补全后可达)`);
+    } else {
+      console.log(`  ✅ ${desc} (已汉化)`);
+    }
+  }
+  return { missing, total: PRIORITY_STRINGS.length };
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const pathFlagIndex = args.findIndex((a) => a === '-p' || a === '--path');
+  const customPath = pathFlagIndex !== -1 ? args[pathFlagIndex + 1] : null;
+  
+  const paths = detectCursorPath(customPath);
+  if (!paths) {
+    console.error('未找到 Cursor 安装目录');
+    if (customPath) {
+      console.error(`已指定路径: ${customPath}`);
+    }
+    process.exit(1);
+  }
+
+  console.log('Cursor 汉化覆盖率自检');
+  console.log(`安装路径: ${paths.appPath}`);
+
+  const results = [
+    auditFile('desktop.main.js', paths.targets[0].abs),
+    auditFile('glass.main.js', paths.targets[1].abs),
+    auditFile('automations.js', paths.targets[2].abs),
+  ];
+
+  const totalMissing = results.reduce((s, r) => s + r.missing, 0);
+  console.log(`\n--- 汇总 ---`);
+  console.log(`优先词条遗漏: ${totalMissing}`);
+  if (totalMissing > 0) {
+    console.log('\n请运行: node index.js localize （需先退出 Cursor）');
+  } else {
+    console.log('\n优先词条已全部覆盖 ✅');
+  }
+}
+
+main();
