@@ -10,8 +10,8 @@ echo.
 echo  [1] 一键汉化
 echo  [2] 恢复英文原版
 echo  [3] 查看汉化状态
-echo  [4] 仅配置中文语言包
-echo  [5] 覆盖率自检
+echo  [4] 配置中文语言包
+echo  [5] 执行覆盖率自检
 echo  [6] 显示帮助
 echo  [0] 退出
 echo.
@@ -92,8 +92,8 @@ echo  Cursor安装路径:
 echo  D:\cursor\cursor\resources\app
 echo.
 echo  注意事项:
-echo  - 首次使用无需 npm install
-echo  - Cursor 大版本更新后需重新汉化
+echo  - 首次使用请先 npm install
+echo  - Cursor 版本更新后需重新汉化
 echo  - 如遇权限问题,请以管理员身份运行
 echo.
 pause
