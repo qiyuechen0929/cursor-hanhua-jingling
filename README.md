@@ -1,5 +1,10 @@
 # Cursor 汉化精灵
 
+![banner](banner.svg)
+
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933) ![Cursor](https://img.shields.io/badge/Cursor-3.x-black) ![Dependencies](https://img.shields.io/badge/Dependencies-0-red) ![Restore](https://img.shields.io/badge/Restore-一键恢复英文-green)
+
+
 > **cursor-hanhua-jingling** — Cursor IDE 界面一键汉化工具
 
 将 Cursor IDE 的专有英文界面替换为简体中文，支持最新版 Cursor 3.x 全部界面区域。
@@ -9,6 +14,15 @@
 > 所有原始文件都会先备份到用户目录，随时可以一键恢复英文原版。
 
 ---
+
+## 🔄 汉化流程
+
+```mermaid
+flowchart LR
+    A[🧾 自动定位 Cursor 安装目录] --> B[💾 原始文件全量备份]
+    B --> C[🈶 替换为简体中文文案]
+    C --> D[✅ 状态检测 / 一键恢复 / 持续更新]
+```
 
 ## ✨ 功能覆盖
 
